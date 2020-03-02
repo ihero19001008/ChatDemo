@@ -5,11 +5,36 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
+<TextView
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:id="@+id/tvLa"
+    app:layout_constraintTop_toTopOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    />
+    <TextView
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:id="@+id/tvLo"
+    app:layout_constraintTop_toTopOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    />
+
+    <fragment
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="400dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+     />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/lvList"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginTop="400dp"
         android:layout_marginBottom="8dp"
         android:text="Hello World!"
         app:layout_constraintLeft_toLeftOf="parent"

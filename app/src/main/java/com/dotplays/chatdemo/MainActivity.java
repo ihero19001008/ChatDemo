@@ -1,10 +1,14 @@
 package com.dotplays.chatdemo;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -19,6 +23,18 @@ import com.dotplays.chatdemo.model.Chat;
 import com.github.nkzawa.emitter.Emitter;
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.rockerhieu.emojicon.EmojiconEditText;
 import com.vanniktech.emoji.EmojiEditText;
 
@@ -29,9 +45,16 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+    private GoogleMap mMap;
+    private FusedLocationProviderClient fusedLocationClient;
+    private LocationRequest locationRequest;
+    private LocationCallback locationCallback;
+    private TextView tvLa;
+    private TextView tvLo;
 
-
+    Double x = 1.0;
+    Double y =2.0;
     private Socket mSocket;
 
     {
@@ -55,12 +78,81 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        tvLa = (TextView) findViewById(R.id.tvLa);
+        tvLo = (TextView) findViewById(R.id.tvLo);
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // reuqest for permission
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                    AppConstants.LOCATION_REQUEST);
+            locationRequest = LocationRequest.create();
+            locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+            locationRequest.setInterval(20 * 1000);
+            locationCallback = new LocationCallback() {
+                @Override
+                public void onLocationResult(LocationResult locationResult) {
+                    if (locationResult == null) {
+                        return;
+                    }
+                    for (Location location : locationResult.getLocations()) {
+                        if (location != null) {
+                            x = location.getLatitude();
+                            y = location.getLongitude();
+                            tvLa.setText(x.toString());
+                            tvLo.setText(y.toString());
+                            Toast.makeText(MainActivity.this, x.toString() + " " + y.toString(),Toast.LENGTH_LONG).show();
+                            LatLng sydney = new LatLng(x, y);
+                            mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in My Position"));
+                            mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+                        }
+                    }
+                }
+            };
+
+        } else {
+        locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(20 * 1000);
+        locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                if (locationResult == null) {
+                    return;
+                }
+                for (Location location : locationResult.getLocations()) {
+                    if (location != null) {
+                        x = location.getLatitude();
+                        y = location.getLongitude();
+                        tvLa.setText(x.toString());
+                        tvLo.setText(y.toString());
+                        Toast.makeText(MainActivity.this, x.toString() + " " + y.toString(),Toast.LENGTH_SHORT).show();
+                        LatLng sydney = new LatLng(x, y);
+                        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Me"));
+                        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+                    }
+                }
+            }
+        };}
+//        x= Double.valueOf(tvLa.getText().toString());
+//        y= Double.valueOf(tvLo.getText().toString());
+//        LatLng sydney = new LatLng(x, y);
+//        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
+//        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+
+
+
         lvList = findViewById(R.id.lvList);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
         chatList = new ArrayList<>();
         linearLayoutManager = new LinearLayoutManager(this);
         chatAdapter = new ChatAdapter(chatList, this);
         lvList.setAdapter(chatAdapter);
         lvList.setLayoutManager(linearLayoutManager);
+
 
         editText = findViewById(R.id.editText);
         Button btnSend = (Button) findViewById(R.id.button);
@@ -70,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
                 String message = editText.getText().toString();
 
                 Chat chat = new Chat();
-                chat.name = "Hải";
+                chat.name = "Nguyên";
                 chat.message = message;
                 chatList.add(chat);
                 chatAdapter.notifyDataSetChanged();
@@ -91,7 +183,7 @@ public class MainActivity extends AppCompatActivity {
                     String message = editText.getText().toString();
 
                     Chat chat = new Chat();
-                    chat.name = "Hải";
+                    chat.name = "Nguyên";
                     chat.message = message;
                     chatList.add(chat);
                     chatAdapter.notifyDataSetChanged();
@@ -170,5 +262,28 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         mSocket.disconnect();
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        // Got last known location. In some rare situations this can be null.
+                        if (location != null) {
+                            // Logic to handle location object
+                            x = location.getLatitude();
+                            y=location.getLongitude();
+                            Toast.makeText(MainActivity.this, x.toString() + " " + y.toString(),Toast.LENGTH_SHORT).show();
+                            LatLng sydney = new LatLng(x, y);
+                            mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
+                            mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+                        }
+                    }
+                });
+        // Add a marker in Sydney and move the camera
+
     }
 }
